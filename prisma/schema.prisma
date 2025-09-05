@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ENUMS
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+enum CambioType {
+  MANUAL
+  AUTOMATICO
+}
+
+enum CombustivelType {
+  GASOLINA
+  ETANOL
+  FLEX
+  DIESEL
+  HIBRIDO
+  ELETRICO
+}
+
+// MODELS
+model User {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  role      UserRole @default(STAFF)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model Car {
+  id            String          @id @default(cuid())
+  titulo        String
+  descricao     String
+  marca         String
+  modelo        String
+  ano           Int
+  km            Int
+  cambio        CambioType
+  combustivel   CombustivelType
+  cor           String
+  portas        Int
+  precoCentavos Int
+  ativo         Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  images CarImage[]
+
+  @@map("cars")
+}
+
+model CarImage {
+  id          String   @id @default(cuid())
+  carId       String
+  url         String
+  storagePath String
+  capa        Boolean  @default(false)
+  ordem       Int
+  createdAt   DateTime @default(now())
+
+  car Car @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@map("car_images")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  acao       String // ex: CAR_CREATE, CAR_UPDATE, CAR_DELETE, LOGIN
+  entidade   String // ex: Car, User
+  entidadeId String
+  payload    Json
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
