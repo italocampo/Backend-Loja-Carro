@@ -1,44 +1,68 @@
-import "dotenv/config";
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import cookieParser from "cookie-parser";
-import pinoHttp from "pino-http";
+import 'dotenv/config';
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import pinoHttp from 'pino-http';
+import { authRouter } from './modules/auth/auth.route';
+import { usersRouter } from './modules/users/user.route';
+import { carRouter } from './modules/cars/car.route';
 
 const app = express();
 
-// Middlewares essenciais
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGINS?.split(","),
+    origin: process.env.CORS_ORIGINS?.split(','),
     credentials: true,
   }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-const pinoConfig = pinoHttp({
-  transport: process.env.NODE_ENV !== "production" // <-- Mude para !==
-    ? { // Se NÃO FOR produção (ou seja, desenvolvimento)...
-        target: 'pino-pretty', // ... use o formatador bonito
-        options: {
-          colorize: true,
-          levelFirst: true,
-          translateTime: 'SYS:dd-mm-yyyy HH:MM:ss',
-        },
-      }
-    : undefined, // Se FOR produção, use undefined (logs em JSON puro)
-});
-
-app.use(pinoConfig);
+app.use(
+  pinoHttp({
+    transport: {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        levelFirst: true,
+        translateTime: 'SYS:dd-mm-yyyy HH:MM:ss',
+      },
+    },
+  }),
+);
 
 // Rota de Health Check
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
 });
 
-// TODO: Importar e usar as rotas da API com prefixo /api/v1
-// Ex: app.use('/api/v1', apiRoutes);
+// USAR AS ROTAS DA API
+app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/cars', carRouter); 
+
+// MIDDLEWARE DE TRATAMENTO DE ERROS (deve ser o último)
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  req.log.error(err.stack); // Log do erro com Pino
+
+  let statusCode = 500;
+  const errorResponse = {
+    erro: {
+      codigo: 'ERRO_INTERNO',
+      mensagem: 'Ocorreu um erro inesperado no servidor.',
+      detalhes: {},
+    },
+  };
+
+  if (err.message.includes('Credenciais inválidas')) {
+    statusCode = 401; // Unauthorized
+    errorResponse.erro.codigo = 'AUTH_FALHOU';
+    errorResponse.erro.mensagem = err.message;
+  }
+
+  res.status(statusCode).json(errorResponse);
+});
 
 export { app };
