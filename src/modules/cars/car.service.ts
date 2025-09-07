@@ -1,6 +1,10 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
-import { getCarsQuerySchema } from './car.validation';
+import {
+  createCarSchema,
+  getCarsQuerySchema,
+  updateCarSchema,
+} from './car.validation';
 import { z } from 'zod';
 
 type GetCarsQuery = z.infer<typeof getCarsQuerySchema>;
@@ -79,5 +83,46 @@ export const carService = {
     });
 
     return car;
+  },
+
+  _checkExists: async (id: string) => {
+    const carExists = await prisma.car.findUnique({ where: { id } });
+    if (!carExists) {
+      throw new Error('Carro não encontrado.');
+    }
+    return carExists;
+  },
+
+  create: async (data: z.infer<typeof createCarSchema>) => {
+    const newCar = await prisma.car.create({
+      data,
+    });
+    return newCar;
+  },
+
+  update: async (id: string, data: z.infer<typeof updateCarSchema>) => {
+    await carService._checkExists(id);
+    const updatedCar = await prisma.car.update({
+      where: { id },
+      data,
+    });
+    return updatedCar;
+  },
+
+  softDelete: async (id: string) => {
+    await carService._checkExists(id);
+    await prisma.car.update({
+      where: { id },
+      data: { ativo: false },
+    });
+    return;
+  },
+
+  hardDelete: async (id: string) => {
+    await carService._checkExists(id);
+    await prisma.car.delete({
+      where: { id },
+    });
+    return;
   },
 };

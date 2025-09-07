@@ -3,7 +3,14 @@ import { z } from 'zod';
 
 // As enums devem corresponder às do schema.prisma
 const CambioType = z.enum(['MANUAL', 'AUTOMATICO']);
-const CombustivelType = z.enum(['GASOLINA', 'ETANOL', 'FLEX', 'DIESEL', 'HIBRIDO', 'ELETRICO']);
+const CombustivelType = z.enum([
+  'GASOLINA',
+  'ETANOL',
+  'FLEX',
+  'DIESEL',
+  'HIBRIDO',
+  'ELETRICO',
+]);
 
 // Schema para os query params da rota GET /cars
 export const getCarsQuerySchema = z.object({
@@ -41,3 +48,29 @@ export const createCarSchema = z.object({
 
 // Schema para atualização (todos os campos são opcionais)
 export const updateCarSchema = createCarSchema.partial();
+
+// Defina os tipos de imagem permitidos em uma constante separada
+const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
+// Schema para gerar a signed URL
+export const createSignedUrlSchema = z.object({
+  contentType: z.union(allowedImageTypes.map((t) => z.literal(t)))
+    .refine((val) => allowedImageTypes.includes(val), {
+      message: 'Tipo de arquivo inválido. Use apenas JPEG, PNG ou WebP.',
+    }),
+  contentLength: z.coerce.number().max(5 * 1024 * 1024, {
+    // 5MB
+    message: 'A imagem não pode ter mais de 5MB.',
+  }),
+});
+
+// Schema para confirmar o upload
+export const confirmUploadSchema = z.object({
+  storagePath: z.string().min(1, 'O caminho do arquivo no storage é obrigatório.'),
+});
+
+// Schema para atualizar uma imagem (capa/ordem)
+export const updateImageSchema = z.object({
+  capa: z.boolean().optional(),
+  ordem: z.number().int().min(0).optional(),
+});

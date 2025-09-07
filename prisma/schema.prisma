@@ -49,7 +49,7 @@ model User {
 model Car {
   id            String          @id @default(cuid())
   titulo        String
-  descricao     String
+  descricao     String?
   marca         String
   modelo        String
   ano           Int
