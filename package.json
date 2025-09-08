@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch src/server.ts | pino-pretty",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "vitest",
@@ -44,6 +44,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "nodemon": "^3.1.10",
+    "pino-pretty": "^13.1.1",
     "prettier": "^3.6.2",
     "supertest": "^7.1.4",
     "tsx": "^4.20.5",
