@@ -1,3 +1,4 @@
+// src/modules/cars/car.controller.ts
 import { Request, Response, NextFunction } from 'express';
 import { carService } from './car.service';
 import { getCarsQuerySchema } from './car.validation';
@@ -82,14 +83,12 @@ export const carController = {
         error instanceof Error &&
         error.message.includes('Carro não encontrado')
       ) {
-        return res
-          .status(404)
-          .json({
-            erro: {
-              codigo: 'CARRO_NAO_ENCONTRADO',
-              mensagem: error.message,
-            },
-          });
+        return res.status(404).json({
+          erro: {
+            codigo: 'CARRO_NAO_ENCONTRADO',
+            mensagem: error.message,
+          },
+        });
       }
       return next(error);
     }
@@ -105,14 +104,12 @@ export const carController = {
         error instanceof Error &&
         error.message.includes('Carro não encontrado')
       ) {
-        return res
-          .status(404)
-          .json({
-            erro: {
-              codigo: 'CARRO_NAO_ENCONTRADO',
-              mensagem: error.message,
-            },
-          });
+        return res.status(404).json({
+          erro: {
+            codigo: 'CARRO_NAO_ENCONTRADO',
+            mensagem: error.message,
+          },
+        });
       }
       return next(error);
     }
@@ -128,15 +125,61 @@ export const carController = {
         error instanceof Error &&
         error.message.includes('Carro não encontrado')
       ) {
-        return res
-          .status(404)
-          .json({
-            erro: {
-              codigo: 'CARRO_NAO_ENCONTRADO',
-              mensagem: error.message,
-            },
-          });
+        return res.status(404).json({
+          erro: {
+            codigo: 'CARRO_NAO_ENCONTRADO',
+            mensagem: error.message,
+          },
+        });
       }
+      return next(error);
+    }
+  },
+
+  createSignedUrl: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id: carId } = req.params;
+      const signedUrlData = await carService.createSignedUrl(carId, req.body);
+      return res.status(200).json(signedUrlData);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('Limite de 20 imagens')
+      ) {
+        return res.status(413).json({
+          erro: { codigo: 'LIMITE_ATINGIDO', mensagem: error.message },
+        });
+      }
+      return next(error);
+    }
+  },
+
+  confirmUpload: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id: carId } = req.params;
+      const newImage = await carService.confirmUpload(carId, req.body);
+      return res.status(201).json(newImage);
+    } catch (error) {
+      return next(error);
+    }
+  },
+
+  updateImage: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id: carId, imageId } = req.params;
+      const updatedImage = await carService.updateImage(carId, imageId, req.body);
+      return res.status(200).json(updatedImage);
+    } catch (error) {
+      return next(error);
+    }
+  },
+
+  deleteImage: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { imageId } = req.params;
+      await carService.deleteImage(imageId);
+      return res.status(204).send();
+    } catch (error) {
       return next(error);
     }
   },

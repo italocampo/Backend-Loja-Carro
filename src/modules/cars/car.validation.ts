@@ -1,4 +1,3 @@
-// src/modules/cars/car.validation.ts
 import { z } from 'zod';
 
 // As enums devem corresponder às do schema.prisma

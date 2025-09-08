@@ -2,10 +2,17 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import {
   createCarSchema,
+  createSignedUrlSchema,
+  confirmUploadSchema,
   getCarsQuerySchema,
   updateCarSchema,
+  updateImageSchema,
 } from './car.validation';
 import { z } from 'zod';
+import { supabase } from '../../lib/supabase';
+import { randomUUID } from 'crypto';
+
+const BUCKET_NAME = process.env.SUPABASE_BUCKET || 'carros';
 
 type GetCarsQuery = z.infer<typeof getCarsQuerySchema>;
 
@@ -120,9 +127,121 @@ export const carService = {
 
   hardDelete: async (id: string) => {
     await carService._checkExists(id);
-    await prisma.car.delete({
-      where: { id },
+    const images = await prisma.carImage.findMany({ where: { carId: id } });
+
+    if (images.length > 0) {
+      const paths = images.map((img) => img.storagePath);
+      await supabase.storage.from(BUCKET_NAME).remove(paths);
+    }
+
+    await prisma.car.delete({ where: { id } });
+  },
+
+  // -- MÉTODOS DE IMAGEM --
+
+  createSignedUrl: async (
+    carId: string,
+    data: z.infer<typeof createSignedUrlSchema>,
+  ) => {
+    await carService._checkExists(carId);
+
+    const imageCount = await prisma.carImage.count({ where: { carId } });
+    if (imageCount >= 20) {
+      throw new Error('Limite de 20 imagens por carro atingido.');
+    }
+
+    const fileExtension = data.contentType.split('/')[1];
+    const path = `${carId}/${randomUUID()}.${fileExtension}`;
+
+    const { data: signedUrlData, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .createSignedUploadUrl(path);
+
+    if (error) {
+      throw new Error(`Falha ao criar Signed URL: ${error.message}`);
+    }
+
+    return { signedUrl: signedUrlData.signedUrl, storagePath: path };
+  },
+
+  confirmUpload: async (
+    carId: string,
+    data: z.infer<typeof confirmUploadSchema>,
+  ) => {
+    await carService._checkExists(carId);
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.storagePath);
+
+    if (!publicUrl) {
+      throw new Error('Não foi possível obter a URL pública do arquivo.');
+    }
+
+    const lastImage = await prisma.carImage.findFirst({
+      where: { carId },
+      orderBy: { ordem: 'desc' },
     });
-    return;
+    const newOrder = (lastImage?.ordem ?? -1) + 1;
+
+    const newImage = await prisma.carImage.create({
+      data: {
+        carId,
+        url: publicUrl,
+        storagePath: data.storagePath,
+        ordem: newOrder,
+        capa: newOrder === 0,
+      },
+    });
+
+    return newImage;
+  },
+
+  updateImage: async (
+    carId: string,
+    imageId: string,
+    data: z.infer<typeof updateImageSchema>,
+  ) => {
+    if (data.capa === true) {
+      await prisma.$transaction([
+        prisma.carImage.updateMany({ where: { carId }, data: { capa: false } }),
+        prisma.carImage.update({ where: { id: imageId }, data: { capa: true } }),
+      ]);
+    }
+
+    const updatedImage = await prisma.carImage.update({
+      where: { id: imageId },
+      data: {
+        ordem: data.ordem,
+      },
+    });
+    return updatedImage;
+  },
+
+  deleteImage: async (imageId: string) => {
+    const image = await prisma.carImage.findUnique({ where: { id: imageId } });
+    if (!image) throw new Error('Imagem não encontrada.');
+
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .remove([image.storagePath]);
+    if (error)
+      throw new Error(`Falha ao deletar imagem do storage: ${error.message}`);
+
+    await prisma.carImage.delete({ where: { id: imageId } });
+
+    if (image.capa) {
+      const nextImage = await prisma.carImage.findFirst({
+        where: { carId: image.carId },
+        orderBy: { ordem: 'asc' },
+      });
+
+      if (nextImage) {
+        await prisma.carImage.update({
+          where: { id: nextImage.id },
+          data: { capa: true },
+        });
+      }
+    }
   },
 };
