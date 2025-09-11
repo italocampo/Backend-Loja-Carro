@@ -1,9 +1,11 @@
+// src/app.ts
 import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import pinoHttp from 'pino-http';
+import type { Options as PinoHttpOptions } from 'pino-http';
 import { authRouter } from './modules/auth/auth.route';
 import { usersRouter } from './modules/users/user.route';
 import { carRouter } from './modules/cars/car.route';
@@ -20,18 +22,22 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(
-  pinoHttp({
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        levelFirst: true,
-        translateTime: 'SYS:dd-mm-yyyy HH:MM:ss',
-      },
+
+// --- CONFIGURAÇÃO DO PINO CORRIGIDA ---
+const pinoOptions: PinoHttpOptions = {};
+
+if (process.env.NODE_ENV !== 'production') {
+  pinoOptions.transport = {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+      levelFirst: true,
+      translateTime: 'SYS:dd-mm-yyyy HH:MM:ss',
     },
-  }),
-);
+  };
+}
+app.use(pinoHttp(pinoOptions));
+// --- FIM DA CORREÇÃO ---
 
 // Rota de Health Check
 app.get('/health', (req, res) => {
@@ -41,11 +47,11 @@ app.get('/health', (req, res) => {
 // USAR AS ROTAS DA API
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', usersRouter);
-app.use('/api/v1/cars', carRouter); 
+app.use('/api/v1/cars', carRouter);
 
 // MIDDLEWARE DE TRATAMENTO DE ERROS (deve ser o último)
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  req.log.error(err.stack); // Log do erro com Pino
+  req.log.error(err.stack);
 
   let statusCode = 500;
   const errorResponse = {
@@ -57,7 +63,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   };
 
   if (err.message.includes('Credenciais inválidas')) {
-    statusCode = 401; // Unauthorized
+    statusCode = 401;
     errorResponse.erro.codigo = 'AUTH_FALHOU';
     errorResponse.erro.mensagem = err.message;
   }
