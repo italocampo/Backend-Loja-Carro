@@ -9,6 +9,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN npm install --only=dev # <<< ADICIONE ESTA LINHA
 RUN npm install -g prisma
 RUN npx prisma generate
 RUN npm run build
