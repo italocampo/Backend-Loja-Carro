@@ -9,8 +9,9 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm install --only=dev # <<< ADICIONE ESTA LINHA
-RUN npm install -g prisma
+# CORREÇÃO 1: Usando o nome completo da flag, que é mais robusto
+RUN npm install --only=development 
+# CORREÇÃO 2: Removido 'npm install -g prisma', pois o npx já usa a versão do projeto
 RUN npx prisma generate
 RUN npm run build
 
@@ -18,11 +19,11 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+# CORREÇÃO 3 (A MAIS IMPORTANTE): Copiando o cliente do Prisma gerado na etapa de build
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY package.json .
 
-# O prisma client gerado na etapa de build espera o schema, por isso copiamos.
 ENV NODE_ENV=production
-
 CMD ["node", "dist/server.js"]
