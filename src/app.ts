@@ -1,9 +1,21 @@
+// Log 1: O app.ts está prestes a iniciar.
+console.log('[DEBUG] app.ts: Iniciando o arquivo da aplicação...');
+
 // Carrega as variáveis de ambiente do arquivo .env apenas em desenvolvimento
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv/config');
+  // Log 2: Dotenv foi carregado.
+  console.log('[DEBUG] app.ts: Variáveis de ambiente .env carregadas (modo desenvolvimento).');
+} else {
+  // Log 2: Dotenv foi ignorado.
+  console.log('[DEBUG] app.ts: Ignorando .env (modo produção).');
 }
 
+
 import express, { Request, Response, NextFunction } from 'express';
+// Log 3: Express foi importado.
+console.log('[DEBUG] app.ts: Módulo Express importado.');
+
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -13,7 +25,14 @@ import { authRouter } from './modules/auth/auth.route';
 import { usersRouter } from './modules/users/user.route';
 import { carRouter } from './modules/cars/car.route';
 
+// Log 4: Todos os módulos foram importados.
+console.log('[DEBUG] app.ts: Todos os módulos foram importados com sucesso.');
+
+
 const app = express();
+// Log 5: Instância do Express criada.
+console.log('[DEBUG] app.ts: Instância do Express criada.');
+
 
 app.use(helmet());
 app.use(
@@ -26,21 +45,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// --- CONFIGURAÇÃO DO PINO CORRIGIDA ---
-const pinoOptions: PinoHttpOptions = {};
+// Log 6: Middlewares básicos configurados.
+console.log('[DEBUG] app.ts: Middlewares (helmet, cors, json, etc.) configurados.');
 
+
+// --- CONFIGURAÇÃO DO PINO ---
+const pinoOptions: PinoHttpOptions = {};
 if (process.env.NODE_ENV !== 'production') {
   pinoOptions.transport = {
     target: 'pino-pretty',
-    options: {
-      colorize: true,
-      levelFirst: true,
-      translateTime: 'SYS:dd-mm-yyyy HH:MM:ss',
-    },
   };
 }
 app.use(pinoHttp(pinoOptions));
-// --- FIM DA CORREÇÃO ---
+// Log 7: Pino logger configurado.
+console.log('[DEBUG] app.ts: Pino logger configurado.');
+
 
 // Rota de Health Check
 app.get('/health', (req, res) => {
@@ -51,9 +70,14 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/cars', carRouter);
+// Log 8: Rotas da API configuradas.
+console.log('[DEBUG] app.ts: Rotas da API configuradas.');
 
-// MIDDLEWARE DE TRATAMENTO DE ERROS (deve ser o último)
+
+// MIDDLEWARE DE TRATAMENTO DE ERROS
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  // Log 9: Um erro foi capturado pelo middleware.
+  console.error('[DEBUG] app.ts: Middleware de erro capturou um erro:', err);
   req.log.error(err.stack);
 
   let statusCode = 500;
@@ -61,7 +85,6 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     erro: {
       codigo: 'ERRO_INTERNO',
       mensagem: 'Ocorreu um erro inesperado no servidor.',
-      detalhes: {},
     },
   };
 
@@ -74,4 +97,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(statusCode).json(errorResponse);
 });
 
+// Log 10: Fim do arquivo app.ts, exportando app.
+console.log('[DEBUG] app.ts: Fim da configuração. Exportando a instância do app.');
 export { app };
+
