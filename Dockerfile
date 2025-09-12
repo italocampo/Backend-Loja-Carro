@@ -8,14 +8,12 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Instala TODAS as dependências (incluindo as de desenvolvimento)
-# Isso é necessário para rodar 'prisma generate' e 'tsc'
 RUN npm install
 
 # Copia todo o resto do código fonte
 COPY . .
 
 # Gera o Prisma Client para o ambiente Linux
-# (O script postinstall não é mais necessário com este Dockerfile)
 RUN npx prisma generate
 
 # Compila o código TypeScript para JavaScript
@@ -27,16 +25,19 @@ FROM node:20-alpine
 # Define o diretório de trabalho
 WORKDIR /app
 
-# Copia as dependências de PRODUÇÃO do estágio de build
-# O prune remove as dependências de desenvolvimento que não precisamos mais
+# --- A CORREÇÃO ESTÁ AQUI ---
+# Primeiro, copia o package.json para que o 'npm prune' saiba o que fazer
+COPY package.json .
+
+# Agora, copia as dependências completas do estágio de build
 COPY --from=build /app/node_modules ./node_modules
+
+# Com o package.json no lugar, o prune vai funcionar corretamente
 RUN npm prune --production
+# --- FIM DA CORREÇÃO ---
 
 # Copia os arquivos compilados do estágio de build
 COPY --from=build /app/dist ./dist
-
-# Copia o package.json para o comando de start
-COPY package.json .
 
 # Expõe a porta que a aplicação usa
 EXPOSE 4000
