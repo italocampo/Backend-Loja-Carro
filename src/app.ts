@@ -1,5 +1,8 @@
-// src/app.ts
-import 'dotenv/config';
+// Carrega as variáveis de ambiente do arquivo .env apenas em desenvolvimento
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv/config');
+}
+
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
