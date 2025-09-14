@@ -3,8 +3,8 @@
 
 generator client {
   provider      = "prisma-client-js"
-  // Adicione esta linha para garantir a compatibilidade com o Alpine Linux
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  // Adiciona o target para Debian (node:slim) junto com o de Alpine
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
