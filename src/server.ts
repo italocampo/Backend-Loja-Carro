@@ -1,3 +1,4 @@
+console.log(`[PROVA DEFINITIVA] DATABASE_URL recebida: "${process.env.DATABASE_URL}"`);
 import { app } from './app';
 import { prisma } from './lib/prisma'; // Importe a instância do Prisma aqui
 import pino from 'pino';
