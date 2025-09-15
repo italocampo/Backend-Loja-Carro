@@ -1,5 +1,5 @@
 # Estágio 1: Build - Instala dependências, gera o Prisma e compila o código
-FROM node:20-slim AS build
+FROM node:22.18-slim AS build
 
 # Define o diretório de trabalho
 WORKDIR /app
