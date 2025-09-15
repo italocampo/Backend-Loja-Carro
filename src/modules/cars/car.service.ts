@@ -9,7 +9,7 @@ import {
   updateImageSchema,
 } from './car.validation';
 import { z } from 'zod';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase.ts';
 import { randomUUID } from 'crypto';
 
 const BUCKET_NAME = process.env.SUPABASE_BUCKET || 'carros';
