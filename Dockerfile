@@ -1,5 +1,5 @@
 # Estágio 1: Build - Instala dependências, gera o Prisma e compila o código
-FROM node:22.18-slim AS build
+FROM node:20-slim AS build
 
 # Define o diretório de trabalho
 WORKDIR /app
@@ -20,13 +20,12 @@ RUN npx prisma generate
 RUN npm run build
 
 # Estágio 2: Produção - Apenas o necessário para rodar
-FROM node:20-slim
+FROM node:20-slim AS runner
 
 # Define o diretório de trabalho
 WORKDIR /app
 
 # Instala os certificados raíz necessários para a verificação SSL/TLS
-# (Usa apt-get em vez de apk, pois a base é Debian)
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Primeiro, copia o package.json para que o 'npm prune' saiba o que fazer
@@ -41,9 +40,14 @@ RUN npm prune --production
 # Copia os arquivos compilados do estágio de build
 COPY --from=build /app/dist ./dist
 
+# ===================================================================
+# ADIÇÃO CRÍTICA: Copia os arquivos do Prisma necessários para rodar
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
+# ===================================================================
+
 # Expõe a porta que a aplicação usa
 EXPOSE 4000
 
 # O comando para iniciar a aplicação
 CMD ["npm", "run", "start"]
-
