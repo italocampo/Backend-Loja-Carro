@@ -12,11 +12,15 @@ export const authController = {
         req.body,
       );
 
+      // --- SOLUÇÃO DEFINITIVA ---
+      // Revertemos para a lógica correta, usando 'secure' em produção,
+      // pois seu domínio é HTTPS. Adicionamos também o 'domain'.
       res.cookie('accessToken', accessToken, {
         httpOnly: true,
         secure: IS_PROD,
         sameSite: 'lax',
         path: '/',
+        domain: IS_PROD ? process.env.COOKIE_DOMAIN : undefined,
         maxAge: 15 * 60 * 1000, // 15 minutos
       });
 
@@ -25,6 +29,7 @@ export const authController = {
         secure: IS_PROD,
         sameSite: 'lax',
         path: '/',
+        domain: IS_PROD ? process.env.COOKIE_DOMAIN : undefined,
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
       });
 
@@ -35,8 +40,8 @@ export const authController = {
   },
 
   logout: (req: Request, res: Response) => {
-    res.clearCookie('accessToken', { path: '/' });
-    res.clearCookie('refreshToken', { path: '/' });
+    res.clearCookie('accessToken', { path: '/', domain: IS_PROD ? process.env.COOKIE_DOMAIN : undefined });
+    res.clearCookie('refreshToken', { path: '/', domain: IS_PROD ? process.env.COOKIE_DOMAIN : undefined });
     return res.status(204).send();
   },
 
@@ -50,13 +55,14 @@ export const authController = {
         secure: IS_PROD,
         sameSite: 'lax',
         path: '/',
+        domain: IS_PROD ? process.env.COOKIE_DOMAIN : undefined,
         maxAge: 15 * 60 * 1000, // 15 minutos
       });
 
       return res.status(200).json({ status: 'Token renovado com sucesso.' });
     } catch (error) {
-      res.clearCookie('accessToken', { path: '/' });
-      res.clearCookie('refreshToken', { path: '/' });
+      res.clearCookie('accessToken', { path: '/', domain: IS_PROD ? process.env.COOKIE_DOMAIN : undefined });
+      res.clearCookie('refreshToken', { path: '/', domain: IS_PROD ? process.env.COOKIE_DOMAIN : undefined });
       return next(error);
     }
   },
@@ -95,3 +101,4 @@ export const authController = {
     }
   },
 };
+
