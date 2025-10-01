@@ -25,8 +25,10 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- CORREÇÃO APLICADA AQUI ---
-app.use(cookieParser(process.env.COOKIE_SECRET));
+// --- CORREÇÃO FINAL ---
+// Removemos o 'secret' para que o cookieParser popule 'req.cookies'
+// com cookies não assinados, que é o que nosso middleware 'isAuthenticated' espera.
+app.use(cookieParser());
 
 // --- CONFIGURAÇÃO DO PINO ---
 const pinoOptions: PinoHttpOptions = {};
