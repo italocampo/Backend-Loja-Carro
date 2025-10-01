@@ -4,6 +4,7 @@ import { prisma } from '../../lib/prisma';
 import { authService } from './auth.service';
 
 const IS_PROD = process.env.NODE_ENV === 'production';
+// --- IGNORE ---
 
 export const authController = {
   login: async (req: Request, res: Response, next: NextFunction) => {
