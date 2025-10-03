@@ -6,32 +6,28 @@ import { z } from 'zod';
 
 export const carController = {
   getAll: async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const query = getCarsQuerySchema.parse(req.query);
-      const { cars, total } = await carService.findMany(query);
-      const totalPages = Math.ceil(total / query.limit);
+  try {
+    const query = getCarsQuerySchema.parse(req.query);
+    const { cars, total } = await carService.findMany(query);
+    const totalPages = Math.ceil(total / query.limit);
 
-      res.setHeader('X-Total-Count', total);
-      res.setHeader('X-Total-Pages', totalPages);
-      res.setHeader(
-        'Cache-Control',
-        'public, max-age=60, stale-while-revalidate=120',
-      );
+    res.setHeader('X-Total-Count', total);
+    res.setHeader('X-Total-Pages', totalPages);
 
-      return res.status(200).json(cars);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
-          erro: {
-            codigo: 'VALIDACAO_FALHOU',
-            mensagem: 'Parâmetros de busca inválidos.',
-            detalhes: error.flatten(),
-          },
-        });
-      }
-      return next(error);
+    return res.status(200).json(cars);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        erro: {
+          codigo: 'VALIDACAO_FALHOU',
+          mensagem: 'Parâmetros de busca inválidos.',
+          detalhes: error.flatten(),
+        },
+      });
     }
-  },
+    return next(error);
+  }
+},
 
   getById: async (req: Request, res: Response, next: NextFunction) => {
     try {
