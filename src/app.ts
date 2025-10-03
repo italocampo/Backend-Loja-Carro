@@ -1,25 +1,28 @@
 // Carrega as variáveis de ambiente do arquivo .env apenas em desenvolvimento
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv/config');
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv/config");
 }
 
-import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
-import pinoHttp from 'pino-http';
-import type { Options as PinoHttpOptions } from 'pino-http';
-import { authRouter } from './modules/auth/auth.route';
-import { usersRouter } from './modules/users/user.route';
-import { carRouter } from './modules/cars/car.route';
+import express, { Request, Response, NextFunction } from "express";
+import cors from "cors";
+import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import pinoHttp from "pino-http";
+import type { Options as PinoHttpOptions } from "pino-http";
+import { authRouter } from "./modules/auth/auth.route";
+import { usersRouter } from "./modules/users/user.route";
+import { carRouter } from "./modules/cars/car.route";
 
 const app = express();
 
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGINS?.split(','),
+    origin: process.env.CORS_ORIGINS?.split(",") || ["http://localhost:5173"],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["set-cookie"],
   }),
 );
 app.use(express.json());
@@ -28,26 +31,26 @@ app.use(express.urlencoded({ extended: true }));
 // --- CORREÇÃO FINAL ---
 // Removemos o 'secret' para que o cookieParser popule 'req.cookies'
 // com cookies não assinados, que é o que nosso middleware 'isAuthenticated' espera.
-app.use(cookieParser());
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // --- CONFIGURAÇÃO DO PINO ---
 const pinoOptions: PinoHttpOptions = {};
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   pinoOptions.transport = {
-    target: 'pino-pretty',
+    target: "pino-pretty",
   };
 }
 app.use(pinoHttp(pinoOptions));
 
 // Rota de Health Check
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 // USAR AS ROTAS DA API
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/users', usersRouter);
-app.use('/api/v1/cars', carRouter);
+app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/users", usersRouter);
+app.use("/api/v1/cars", carRouter);
 
 // MIDDLEWARE DE TRATAMENTO DE ERROS
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
@@ -56,14 +59,14 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   let statusCode = 500;
   const errorResponse = {
     erro: {
-      codigo: 'ERRO_INTERNO',
-      mensagem: 'Ocorreu um erro inesperado no servidor.',
+      codigo: "ERRO_INTERNO",
+      mensagem: "Ocorreu um erro inesperado no servidor.",
     },
   };
 
-  if (err.message.includes('Credenciais inválidas')) {
+  if (err.message.includes("Credenciais inválidas")) {
     statusCode = 401;
-    errorResponse.erro.codigo = 'AUTH_FALHOU';
+    errorResponse.erro.codigo = "AUTH_FALHOU";
     errorResponse.erro.mensagem = err.message;
   }
 

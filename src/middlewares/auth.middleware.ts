@@ -1,8 +1,6 @@
-// src/middlewares/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-// Estendendo a interface Request do Express para incluir nossa propriedade 'user'
 declare global {
   namespace Express {
     interface Request {
@@ -14,6 +12,7 @@ declare global {
   }
 }
 
+const IS_PROD = process.env.NODE_ENV === 'production';
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -30,10 +29,26 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
 
   try {
     const decoded = jwt.verify(accessToken, JWT_SECRET) as { sub: string; role: 'ADMIN' | 'STAFF' };
-    req.user = { id: decoded.sub, role: decoded.role }; // Anexa o usuário à requisição
+    req.user = { id: decoded.sub, role: decoded.role };
     next();
   } catch (error) {
-    // Se o token expirou ou é inválido
+    // Limpa os cookies quando o token é inválido
+    res.clearCookie('accessToken', {
+      path: '/',
+      domain: IS_PROD ? process.env.COOKIE_DOMAIN : undefined,
+      httpOnly: true,
+      secure: IS_PROD,
+      sameSite: 'lax'
+    });
+    
+    res.clearCookie('refreshToken', {
+      path: '/',
+      domain: IS_PROD ? process.env.COOKIE_DOMAIN : undefined,
+      httpOnly: true,
+      secure: IS_PROD,
+      sameSite: 'lax'
+    });
+
     return res.status(401).json({
       erro: {
         codigo: 'TOKEN_INVALIDO',
@@ -43,7 +58,6 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
   }
 };
 
-// Middleware para verificar se o usuário tem uma role específica (ou superior)
 export const hasRole = (roles: Array<'ADMIN' | 'STAFF'>) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
