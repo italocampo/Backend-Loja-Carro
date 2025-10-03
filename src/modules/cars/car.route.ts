@@ -6,9 +6,6 @@ import { validateRequest } from '../../middlewares/validateRequest';
 import {
   createCarSchema,
   updateCarSchema,
-  createSignedUrlSchema,
-  confirmUploadSchema,
-  updateImageSchema,
 } from './car.validation';
 
 const carRouter = Router();
@@ -22,67 +19,32 @@ carRouter.post(
   '/',
   isAuthenticated,
   hasRole(['ADMIN', 'STAFF']),
+  carController.uploadImages,
   validateRequest(createCarSchema),
-  carController.create,
+  carController.create
 );
 
 carRouter.patch(
   '/:id',
   isAuthenticated,
   hasRole(['ADMIN', 'STAFF']),
+  carController.uploadImages,
   validateRequest(updateCarSchema),
-  carController.update,
+  carController.update
 );
 
 carRouter.delete(
   '/:id',
   isAuthenticated,
   hasRole(['ADMIN', 'STAFF']),
-  carController.softDelete,
+  carController.softDelete
 );
 
 carRouter.delete(
   '/:id/hard',
   isAuthenticated,
   hasRole(['ADMIN']), // Somente ADMIN pode fazer hard delete
-  carController.hardDelete,
-);
-
-// --- ROTAS DE GERENCIAMENTO DE IMAGENS (STAFF/ADMIN) ---
-
-// 1. Gerar URL para upload
-carRouter.post(
-  '/:id/images/signed-url',
-  isAuthenticated,
-  hasRole(['ADMIN', 'STAFF']),
-  validateRequest(createSignedUrlSchema),
-  carController.createSignedUrl,
-);
-
-// 2. Confirmar o upload e salvar no DB
-carRouter.post(
-  '/:id/images/confirm',
-  isAuthenticated,
-  hasRole(['ADMIN', 'STAFF']),
-  validateRequest(confirmUploadSchema),
-  carController.confirmUpload,
-);
-
-// 3. Atualizar (marcar como capa, reordenar)
-carRouter.patch(
-  '/:id/images/:imageId',
-  isAuthenticated,
-  hasRole(['ADMIN', 'STAFF']),
-  validateRequest(updateImageSchema),
-  carController.updateImage,
-);
-
-// 4. Deletar uma imagem
-carRouter.delete(
-  '/:id/images/:imageId',
-  isAuthenticated,
-  hasRole(['ADMIN', 'STAFF']),
-  carController.deleteImage,
+  carController.hardDelete
 );
 
 export { carRouter };

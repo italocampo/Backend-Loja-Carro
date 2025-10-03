@@ -14,6 +14,7 @@ import { usersRouter } from "./modules/users/user.route";
 import { carRouter } from "./modules/cars/car.route";
 
 const app = express();
+app.disable('etag');
 
 app.use(helmet());
 app.use(
