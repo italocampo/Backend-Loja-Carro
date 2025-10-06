@@ -91,7 +91,7 @@ export const carService = {
   },
 
   // --- FUNÇÃO UPDATE MODIFICADA ---
-  update: async (
+   update: async (
     id: string,
     data: z.infer<typeof updateCarSchema>,
     files?: Express.Multer.File[],
@@ -120,13 +120,19 @@ export const carService = {
 
       // 3. Adiciona as novas imagens que o usuário enviou
       if (files && files.length > 0) {
+        // --- LÓGICA CORRIGIDA E ADICIONADA AQUI ---
+        // Primeiro, verifica se já existe uma imagem de capa para este carro
+        let coverExists = await tx.carImage.count({ where: { carId: id, capa: true } }) > 0;
+
+        // Encontra a ordem da última imagem para continuar a sequência
         const lastImage = await tx.carImage.findFirst({
           where: { carId: id },
           orderBy: { ordem: 'desc' },
         });
         let newOrder = (lastImage?.ordem ?? -1) + 1;
 
-        for (const file of files) {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
           const fileExtension = file.originalname.split('.').pop();
           const path = `${id}/${randomUUID()}.${fileExtension}`;
 
@@ -137,15 +143,23 @@ export const carService = {
           
           const { data: { publicUrl } } = supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
 
+          // Define se a imagem atual deve ser a capa
+          const shouldBeCover = !coverExists && i === 0;
+
           await tx.carImage.create({
             data: {
               carId: id,
               url: publicUrl,
               storagePath: path,
               ordem: newOrder++,
-              capa: false, // Novas imagens nunca são a capa por padrão
+              capa: shouldBeCover, // A primeira imagem se torna a capa SE não houver outra
             },
           });
+          
+          // Se acabamos de criar uma capa, atualiza a flag para as próximas imagens no loop
+          if (shouldBeCover) {
+            coverExists = true;
+          }
         }
       }
       return updatedCar;
