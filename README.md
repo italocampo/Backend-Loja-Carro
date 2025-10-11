@@ -1,5 +1,5 @@
-API - Catálogo de Carros | Paulo Ney Veículos
-Este é o backend desenvolvido para o sistema de gerenciamento de catálogo da loja de veículos "Paulo Ney Veículos". A API é responsável por toda a lógica de negócio, autenticação de funcionários e gerenciamento do inventário de carros e imagens.
+API - Catálogo de Carros
+Este é o backend desenvolvido para o sistema de gerenciamento de catálogo de uma  loja de veículos . A API é responsável por toda a lógica de negócio, autenticação de funcionários e gerenciamento do inventário de carros e imagens.
 ##
 
 ✨ Funcionalidades Principais:
