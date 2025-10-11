@@ -1,13 +1,8 @@
-Com certeza! Um bom README.md é a "certidão de nascimento" do seu projeto. Ele é essencial para que você (ou qualquer outro desenvolvedor no futuro) possa entender e rodar o projeto rapidamente.
-
-Aqui está um texto completo e bem estruturado que você pode copiar e colar diretamente no seu arquivo README.md no GitHub.
-
-(Copie tudo a partir daqui)
-
 API - Catálogo de Carros | Paulo Ney Veículos
 Este é o backend desenvolvido para o sistema de gerenciamento de catálogo da loja de veículos "Paulo Ney Veículos". A API é responsável por toda a lógica de negócio, autenticação de funcionários e gerenciamento do inventário de carros e imagens.
+##
 
-✨ Funcionalidades Principais
+✨ Funcionalidades Principais:
 Autenticação Segura: Sistema completo de login com JWT (accessToken + refreshToken) utilizando cookies HttpOnly para maior segurança.
 
 Controle de Acesso por Nível: Dois níveis de permissão (ADMIN e STAFF) para proteger rotas administrativas.
@@ -27,6 +22,7 @@ Suporte a filtros por texto, marca, modelo, faixa de ano, faixa de preço, e mai
 Ordenação customizável dos resultados.
 
 Upload de Imagens: Sistema de upload de múltiplas imagens por carro, com processamento via multer e armazenamento na nuvem utilizando o Supabase Storage.
+##
 
 🛠️ Tecnologias Utilizadas
 Runtime: Node.js v20
