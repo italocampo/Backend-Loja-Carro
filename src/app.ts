@@ -19,8 +19,8 @@ app.disable('etag');
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGINS?.split(",") || ["http://localhost:5173"],
-    credentials: true,
+   origin: ["https://frontend-loja-carro.vercel.app", "http://localhost:5173"], // <-- FAÇA ESSA MUDANÇA
+    credentials: true,
     // --- ALTERAÇÃO APLICADA AQUI ---
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
