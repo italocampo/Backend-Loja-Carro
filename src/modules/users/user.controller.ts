@@ -7,15 +7,13 @@ export const userController = {
     try {
       // Apenas ADMIN pode criar um usuário ADMIN
       if (req.body.role === "ADMIN" && req.user?.role !== "ADMIN") {
-        return res
-          .status(403)
-          .json({
-            erro: {
-              codigo: "ACESSO_NEGADO",
-              mensagem:
-                "Apenas administradores podem criar outros administradores.",
-            },
-          });
+        return res.status(403).json({
+          erro: {
+            codigo: "ACESSO_NEGADO",
+            mensagem:
+              "Apenas administradores podem criar outros administradores.",
+          },
+        });
       }
 
       const newUser = await userService.create(req.body);
@@ -40,8 +38,12 @@ export const userController = {
 
   list: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await userService.findAll();
-      return res.status(200).json(users);
+      const page = req.query.page ? Number(req.query.page) : undefined;
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const q = req.query.q ? String(req.query.q) : undefined;
+
+      const result = await userService.findAll({ page, limit, q });
+      return res.status(200).json(result);
     } catch (error) {
       return next(error);
     }
@@ -63,14 +65,12 @@ export const userController = {
 
       // Evitar que um STAFF atualize para ADMIN (a rota já é protegida por ADMIN, mas mantemos checagem)
       if (req.body.role === "ADMIN" && req.user?.role !== "ADMIN") {
-        return res
-          .status(403)
-          .json({
-            erro: {
-              codigo: "ACESSO_NEGADO",
-              mensagem: "Apenas administradores podem definir o papel ADMIN.",
-            },
-          });
+        return res.status(403).json({
+          erro: {
+            codigo: "ACESSO_NEGADO",
+            mensagem: "Apenas administradores podem definir o papel ADMIN.",
+          },
+        });
       }
 
       const updated = await userService.update(id, req.body);
@@ -80,11 +80,9 @@ export const userController = {
         error instanceof Error &&
         error.message.includes("e-mail já existe")
       ) {
-        return res
-          .status(409)
-          .json({
-            erro: { codigo: "RECURSO_DUPLICADO", mensagem: error.message },
-          });
+        return res.status(409).json({
+          erro: { codigo: "RECURSO_DUPLICADO", mensagem: error.message },
+        });
       }
       return next(error);
     }
@@ -93,6 +91,34 @@ export const userController = {
   delete: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = req.params;
+      // Prevent admin from deleting themself
+      if (req.user && req.user.id === id) {
+        return res
+          .status(400)
+          .json({
+            erro: {
+              codigo: "ACAO_INVALIDA",
+              mensagem: "Você não pode excluir a si mesmo.",
+            },
+          });
+      }
+
+      // If target is ADMIN, ensure there will still be at least one admin
+      const target = await userService.findById(id);
+      if (target.role === "ADMIN") {
+        const adminCount = await userService.countAdmins();
+        if (adminCount <= 1) {
+          return res
+            .status(400)
+            .json({
+              erro: {
+                codigo: "ACAO_INVALIDA",
+                mensagem: "Não é possível remover o último administrador.",
+              },
+            });
+        }
+      }
+
       await userService.delete(id);
       return res.status(204).send();
     } catch (error) {

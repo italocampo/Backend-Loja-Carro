@@ -14,18 +14,26 @@ import { usersRouter } from "./modules/users/user.route";
 import { carRouter } from "./modules/cars/car.route";
 
 const app = express();
-app.disable('etag');
+app.disable("etag");
 
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGINS?.split(",") || ["http://localhost:5173"],
+    origin: (() => {
+      const raw = process.env.CORS_ORIGINS;
+      if (!raw) return ["http://localhost:5173"];
+      return raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => s.replace(/\/$/, "")); // remove trailing slash if present
+    })(),
     credentials: true,
     // --- ALTERAÇÃO APLICADA AQUI ---
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     exposedHeaders: ["set-cookie"],
-  })
+  }),
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

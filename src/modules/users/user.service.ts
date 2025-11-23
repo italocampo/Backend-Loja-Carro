@@ -35,17 +35,37 @@ export const userService = {
   },
 
   // Listar todos os usuários (sem senha)
-  findAll: async () => {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        nome: true,
-        email: true,
-        role: true,
-        ativo: true,
-      },
-    });
-    return users;
+  findAll: async (opts?: { page?: number; limit?: number; q?: string }) => {
+    const page = Math.max(1, Number(opts?.page || 1));
+    const limit = Math.max(1, Math.min(100, Number(opts?.limit || 10)));
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (opts?.q) {
+      where.OR = [
+        { nome: { contains: opts.q, mode: "insensitive" } },
+        { email: { contains: opts.q, mode: "insensitive" } },
+      ];
+    }
+
+    const [total, users] = await Promise.all([
+      prisma.user.count({ where }),
+      prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { nome: "asc" },
+        select: {
+          id: true,
+          nome: true,
+          email: true,
+          role: true,
+          ativo: true,
+        },
+      }),
+    ]);
+
+    return { users, total, page, limit };
   },
 
   // Buscar usuário por id
@@ -105,5 +125,10 @@ export const userService = {
   delete: async (id: string) => {
     await prisma.user.delete({ where: { id } });
     return true;
+  },
+
+  // Contagem de admins ativos
+  countAdmins: async () => {
+    return prisma.user.count({ where: { role: "ADMIN", ativo: true } });
   },
 };
